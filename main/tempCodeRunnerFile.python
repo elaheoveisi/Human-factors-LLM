@@ -1,0 +1,152 @@
+import pandas as pd
+import numpy as np
+from llama_index.readers.file.docs import PDFReader
+from llama_index.core import VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+import os
+
+# Set OpenAI API key
+os.environ['OPENAI_API_KEY'] = "YOUR_API_KEY"
+
+def load_documents(file_paths):
+    """
+    Load each PDF document separately.
+    
+    Parameters
+    ----------
+    file_paths : list of str
+        List of file paths to the PDF documents.
+
+    Returns
+    -------
+    dict
+        Dictionary with file names as keys and loaded document objects as values.
+    """
+    pdf_reader = PDFReader()
+    document_dict = {}
+
+    for file_path in file_paths:
+        docs = pdf_reader.load_data(file=file_path)
+        file_name = os.path.basename(file_path)
+        print(f"Loaded {len(docs)} documents from {file_name}")
+        document_dict[file_name] = docs  # Store each file's document separately
+
+    return document_dict
+
+def create_index(documents):
+    """
+    Create an index for each document separately.
+    
+    Parameters
+    ----------
+    documents : dict
+        Dictionary with file names as keys and documents as values.
+
+    Returns
+    -------
+    dict
+        Dictionary with file names as keys and corresponding VectorStoreIndex objects as values.
+    """
+    index_dict = {}
+    for file_name, docs in documents.items():
+        index_dict[file_name] = VectorStoreIndex.from_documents(docs)
+    return index_dict
+
+def create_chat_engine(index_dict):
+    """
+    Create a chat engine for each indexed document.
+    
+    Parameters
+    ----------
+    index_dict : dict
+        Dictionary with file names as keys and corresponding VectorStoreIndex objects as values.
+
+    Returns
+    -------
+    dict
+        Dictionary with file names as keys and corresponding chat engine instances as values.
+    """
+    chat_engines = {}
+    llm = OpenAI(model="gpt-4o-mini", api_key=os.environ['OPENAI_API_KEY'])
+    
+    for file_name, index in index_dict.items():
+        chat_engines[file_name] = index.as_chat_engine(chat_mode="condense_question", llm=llm, verbose=True)
+    
+    return chat_engines
+
+def get_responses(documents, questions, chat_engines):
+    """
+    Process each document separately, answering all questions.
+    
+    Parameters
+    ----------
+    documents : dict
+        Dictionary with file names as keys and loaded documents as values.
+    questions : list of str
+        List of questions to ask for each document.
+    chat_engines : dict
+        Dictionary with file names as keys and corresponding chat engine instances as values.
+
+    Returns
+    -------
+    np.ndarray
+        Numpy structured array containing responses.
+    """
+    responses = []
+    
+    for file_name, chat_engine in chat_engines.items():
+        print(f"\nProcessing questions for {file_name}...\n")
+        for question in questions:
+            prompt = f"Please answer the following question with 'Yes' or 'No': {question}"
+            response = chat_engine.chat(prompt)
+            responses.append((file_name, question, response))
+
+    dtype = np.dtype([
+        ('Document', 'U200'),
+        ('Question', 'U300'),
+        ('Answer', 'U10')
+    ])
+
+    return np.array(responses, dtype=dtype)
+
+def save_responses_to_csv(responses, file_name="responses.csv"):
+    """
+    Save responses to a CSV file.
+
+    Parameters
+    ----------
+    responses : np.ndarray
+        Structured NumPy array with responses.
+    file_name : str, optional
+        Name of the output CSV file (default is "responses.csv").
+    """
+    df = pd.DataFrame(responses)
+    df.to_csv(file_name, index=False)
+    print(f"Responses saved to {file_name}")
+
+# Define input file paths
+file_paths = [
+  r"File_path"
+  r"File_path"]
+
+# Define questions
+questions = [
+             #ther questions
+    
+]
+
+# Load documents
+documents = load_documents(file_paths)
+
+# Create index
+index_dict = create_index(documents)
+
+# Create chat engine
+chat_engines = create_chat_engine(index_dict)
+
+# Get responses
+responses = get_responses(documents, questions, chat_engines)
+
+# Save responses to CSV
+save_responses_to_csv(responses)
+
