@@ -1,54 +1,23 @@
 import numpy as np
-import scipy.stats as stats
+from scipy.stats import chi2_contingency
 
-# question = Retrieving data. Wait a few seconds and try to cut or copy again.
+# Creating the updated contingency table with a "Neutral" category
+data = np.array([[7 , 5],  # Owns Cats
+                 [162,210],  # No Cats
+                 [46,0]]) # Neutral
 
-yes_llm = 35
-yes_manual = 40
-total_samples = 215
+# Perform Chi-Square test
+chi2_stat, p_value, dof, expected = chi2_contingency(data)
 
+# Print results
+print(f"Chi-Square Statistic: {chi2_stat:.4f}")
+print(f"P-Value: {p_value:.4f}")
+print(f"Degrees of Freedom: {dof}")
+print(expected)
 
-def two_proportion_z_test(yes_llm, yes_manual, total_samples, alpha=0.05):
-    """
-    Conducts a two-proportion Z-test to determine whether there is a significant
-    difference between two proportions.
-
-    Parameters:
-    yes_llm (int): Count of "yes" responses in the LLM-based group.
-    yes_manual (int): Count of "yes" responses in the manual group.
-    total_samples (int): Total number of samples in each group.
-    alpha (float, optional): Significance level for hypothesis testing. Default is 0.05.
-
-    Returns:
-    dict: A dictionary containing the Z-Statistic, P-Value, and the conclusion.
-    """
-
-    # Compute proportions for both groups
-    p1 = yes_llm / total_samples  # Proportion of "yes" responses in LLM group
-    p2 = yes_manual / total_samples  # Proportion of "yes" responses in Manual group
-
-    # Compute the pooled proportion across both groups
-    p_pooled = (yes_llm + yes_manual) / (2 * total_samples)
-
-    # Compute standard error of the difference
-    se = np.sqrt(p_pooled * (1 - p_pooled) * (2 / total_samples))
-
-    # Compute the Z-score (test statistic)
-    z_stat = (p1 - p2) / se
-
-    # Compute the p-value for the two-tailed test
-    p_value = 2 * (1 - stats.norm.cdf(np.abs(z_stat)))
-
-    # Interpretation of results
-    conclusion = (
-        "Reject the null hypothesis: Significant difference found."
-        if p_value < alpha
-        else "Fail to reject the null hypothesis: No significant difference."
-    )
-
-    return {"Z-Statistic": z_stat, "P-Value": p_value, "Conclusion": conclusion}
-
-
-# Call the function and print results
-results = two_proportion_z_test(yes_llm, yes_manual, total_samples)
-print(results)
+# Interpretation
+alpha = 0.05
+if p_value < alpha:
+    print("Reject the null hypothesis: There is a significant difference between the groups.")
+else:
+    print("Fail to reject the null hypothesis: No significant difference between the groups.")
