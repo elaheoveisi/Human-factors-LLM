@@ -1,0 +1,45 @@
+import numpy as np
+from scipy.stats import chi2_contingency
+
+def perform_chi_square_test(data, alpha=0.05):
+    """
+    Performs a Chi-Square test of independence on a given contingency table.
+
+    Parameters:
+    - data (numpy.ndarray): A 2D NumPy array representing the contingency table.
+    - alpha (float, optional): Significance level for hypothesis testing (default is 0.05).
+
+    Returns:
+    - dict: A dictionary containing test results including chi-square statistic, 
+            p-value, degrees of freedom, expected frequencies, and hypothesis conclusion.
+    """
+    
+    # Perform the Chi-Square test
+    chi2_stat, p_value, dof, expected = chi2_contingency(data)
+
+    # Store results in a dictionary for structured output
+    results = {
+        "Chi-Square Statistic": round(chi2_stat, 4),
+        "P-Value": round(p_value, 4),
+        "Degrees of Freedom": dof,
+        "Expected Frequencies": expected,
+        "Conclusion": "Reject the null hypothesis: Significant difference between the groups."
+        if p_value < alpha else "Fail to reject the null hypothesis: No significant difference."
+    }
+
+    return results
+
+# Example usage
+data = np.array([
+    [7, 5],    # "Yes" responses
+    [162, 210],  # "No" responses
+    [46, 0]   # "Ambiguous" responses
+])
+
+# Run the Chi-Square test
+results = perform_chi_square_test(data)
+
+# Display results
+for key, value in results.items():
+    print(f"{key}: {value}")
+
