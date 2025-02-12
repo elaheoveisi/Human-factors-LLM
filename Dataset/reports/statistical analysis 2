@@ -1,0 +1,62 @@
+import numpy as np
+import statsmodels.api as sm
+
+def two_proportion_ztest(llm_group, total_A, manual_group, total_B):
+    """
+    Perform a two-proportion Z-test to compare the proportions of two groups.
+
+    Parameters
+    ----------
+    llm_group : array-like
+        Array containing the count of successes (e.g., accidents) in group A.
+    total_A : int
+        Total number of observations in group A.
+    manual_group : array-like
+        Array containing the count of successes (e.g., accidents) in group B.
+    total_B : int
+        Total number of observations in group B.
+
+    Returns
+    -------
+    stat : float
+        Z-test statistic.
+    p_value : float
+        P-value for the test.
+    conclusion : str
+        Interpretation of the statistical test result.
+
+    Notes
+    -----
+    The two-proportion Z-test is used to determine whether there is a significant
+    difference between the proportions of two independent groups.
+    """
+    # Convert counts to total occurrences
+    count_A = np.sum(llm_group)
+    count_B = np.sum(manual_group)
+    
+    # Create arrays for observed counts and total observations
+    count = np.array([count_A, count_B])
+    nobs = np.array([total_A, total_B])
+    
+    # Perform the two-proportion Z-test
+    stat, p_value = sm.stats.proportions_ztest(count, nobs, alternative='two-sided')
+    
+    # Interpretation of results
+    if p_value < 0.05:
+        conclusion = "The difference is statistically significant."
+    else:
+        conclusion = "No significant difference between the two groups."
+    
+    return stat, p_value, conclusion
+
+# Example usage
+llm_group = [7]  # Number of accidents in Group A
+total_A = 215    # Total number of observations in Group A
+
+manual_group = [5]  # Number of accidents in Group B
+total_B = 215       # Total number of observations in Group B
+
+stat, p_value, conclusion = two_proportion_ztest(llm_group, total_A, manual_group, total_B)
+print(f"Z-test statistic: {stat:.4f}")
+print(f"P-value: {p_value:.4f}")
+print(conclusion)
